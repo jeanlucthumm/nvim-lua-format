@@ -14,6 +14,10 @@ function string:split(delimiter)
     return result
 end
 
+local function table_concat(dest, src)
+    for i = 1, #src do dest[#dest + 1] = src[i] end
+end
+
 local M = {}
 
 function M.setup(opt) print("Completed setup") end
@@ -31,13 +35,6 @@ function M.format()
     local handle = uv.spawn("lua-format",
                             {args = {name}, stdio = {nil, stdout, stderr}}, done)
 
-    local buf = api.nvim_create_buf(true, false)
-    if buf == 0 then
-        api.nvim_err_writeln("Failed to create temporary buffer")
-        return
-    end
-    api.nvim_buf_set_name(buf, "TEMP")
-
     uv.read_start(stderr, vim.schedule_wrap(function(err, data)
         assert(not err, err)
         if data then
@@ -45,13 +42,13 @@ function M.format()
         end
     end))
 
+    local formatted_lines = {}
     uv.read_start(stdout, vim.schedule_wrap(function(err, data)
         assert(not err, err)
         if data then
-            api.nvim_buf_set_lines(buf, -2, -1, false,
-                                   ("stdout chunk " .. data):split("\n"))
+            table_concat(formatted_lines, data:split("\n"))
         else
-            print("stdout end")
+            api.nvim_buf_set_lines(0, 0, -1, true, formatted_lines)
         end
     end))
 end
