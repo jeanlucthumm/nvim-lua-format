@@ -18,22 +18,50 @@ local function table_concat(dest, src)
     for i = 1, #src do dest[#dest + 1] = src[i] end
 end
 
+local function convert_opt_to_args(opt)
+    local args = {}
+    for k, v in pairs(opt) do
+        local arg = k:gsub("_", "-")
+
+        -- Boolean options have [no]arg prefix in CLI
+        if type(v) == "boolean" then
+            if not v then arg = "no-" .. arg end
+            table.insert(args, "--" .. arg)
+        else
+            table.insert(args, "--" .. arg)
+            table.insert(args, tostring(v))
+        end
+    end
+    return args
+end
+
 local M = {}
 
-function M.setup(opt) print("Completed setup") end
+function M.setup(opt) 
+    M.opt = opt.options 
+end
 
-function M.format()
-    local name = api.nvim_buf_get_name(0)
+function M.format(opt, config_file)
+    if not opt then opt = M.opt end
+    local name = api.nvim_buf_get_name(0) -- full path
 
     local stdout = uv.new_pipe()
     local stderr = uv.new_pipe()
+
+    -- Pass the correct style options
+    local args = {name}
+    if config_file then
+        table_concat(args, {"-c", config_file})
+    elseif opt then
+        table_concat(args, convert_opt_to_args(opt))
+    end
 
     local function done()
         stdout:close()
         stderr:close()
     end
     local handle = uv.spawn("lua-format",
-                            {args = {name}, stdio = {nil, stdout, stderr}}, done)
+                            {args = args, stdio = {nil, stdout, stderr}}, done)
 
     uv.read_start(stderr, vim.schedule_wrap(function(err, data)
         assert(not err, err)
@@ -42,6 +70,8 @@ function M.format()
         end
     end))
 
+    -- TODO this deletes the entire buffer on error
+    -- Store stdout as it streams in and rewrite buf once its done
     local formatted_lines = {}
     uv.read_start(stdout, vim.schedule_wrap(function(err, data)
         assert(not err, err)
