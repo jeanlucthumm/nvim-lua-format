@@ -38,12 +38,23 @@ end
 
 local M = {}
 
-function M.setup(opt) M.opt = opt.options end
+local default_opt = {
+    -- Whether to search for local .lua-format files
+    use_local_config = {},
+    -- Default style options
+    default = {}
+}
+
+function M.setup(opt)
+    M.opt = vim.tbl_deep_extend("force", default_opt, opt or {})
+end
 
 function M.format(opt, config_file)
     -- Find defaults for parameters
-    if not opt then opt = M.opt end
-    if not config_file then config_file = fn.findfile(".lua-format", ".;") end
+    if not opt then opt = M.default end
+    if not config_file and M.opt.use_local_config then
+        config_file = fn.findfile(".lua-format", ".;")
+    end
 
     local name = api.nvim_buf_get_name(0) -- full path
     local stdout = uv.new_pipe()
