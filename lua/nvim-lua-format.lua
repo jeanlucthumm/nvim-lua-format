@@ -1,5 +1,6 @@
 local api = vim.api
 local uv = vim.loop
+local fn = vim.fn
 
 function string:split(delimiter)
     local result = {}
@@ -37,20 +38,20 @@ end
 
 local M = {}
 
-function M.setup(opt) 
-    M.opt = opt.options 
-end
+function M.setup(opt) M.opt = opt.options end
 
 function M.format(opt, config_file)
+    -- Find defaults for parameters
     if not opt then opt = M.opt end
-    local name = api.nvim_buf_get_name(0) -- full path
+    if not config_file then config_file = fn.findfile(".lua-format", ".;") end
 
+    local name = api.nvim_buf_get_name(0) -- full path
     local stdout = uv.new_pipe()
     local stderr = uv.new_pipe()
 
     -- Pass the correct style options
     local args = {name}
-    if config_file then
+    if config_file and config_file ~= "" then
         table_concat(args, {"-c", config_file})
     elseif opt then
         table_concat(args, convert_opt_to_args(opt))
