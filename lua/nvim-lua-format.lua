@@ -68,11 +68,13 @@ function M.format(opt, config_file)
         table_concat(args, convert_opt_to_args(opt))
     end
 
+    local handle
     local function done()
         stdout:close()
         stderr:close()
+        handle:close()
     end
-    local handle = uv.spawn("lua-format",
+    handle = uv.spawn("lua-format",
                             {args = args, stdio = {nil, stdout, stderr}}, done)
 
     uv.read_start(stderr, vim.schedule_wrap(function(err, data)
