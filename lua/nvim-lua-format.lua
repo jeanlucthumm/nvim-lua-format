@@ -11,7 +11,10 @@ function string:split(delimiter)
         from = delim_to + 1
         delim_from, delim_to = string.find(self, delimiter, from)
     end
-    table.insert(result, string.sub(self, from))
+    local last = string.sub(self, from)
+    if last ~= "" then
+        table.insert(result, string.sub(self, from))
+    end
     return result
 end
 
@@ -36,6 +39,15 @@ local function convert_opt_to_args(opt)
     return args
 end
 
+local function merge_lines(accum, new, fuse_border)
+    if fuse_border and #accum > 0 and #new > 0 then
+        new[1] = accum[#accum] .. new[1]
+        accum[#accum] = nil
+    end
+    table_concat(accum, new)
+    print(vim.inspect(new))
+end
+
 local M = {}
 
 local default_opt = {
@@ -43,6 +55,7 @@ local default_opt = {
     use_local_config = {},
     -- Default style options
     default = {}
+    -- TODO whether to automatically save buffer when formatting unsaved
 }
 
 function M.setup(opt)
@@ -75,7 +88,7 @@ function M.format(opt, config_file)
         handle:close()
     end
     handle = uv.spawn("lua-format",
-                            {args = args, stdio = {nil, stdout, stderr}}, done)
+                      {args = args, stdio = {nil, stdout, stderr}}, done)
 
     uv.read_start(stderr, vim.schedule_wrap(function(err, data)
         assert(not err, err)
@@ -84,13 +97,15 @@ function M.format(opt, config_file)
         end
     end))
 
-    -- TODO this deletes the entire buffer on error
+    -- FIXME this deletes the entire buffer on error
     -- Store stdout as it streams in and rewrite buf once its done
     local formatted_lines = {}
+    local had_newline = false;
     uv.read_start(stdout, vim.schedule_wrap(function(err, data)
         assert(not err, err)
         if data then
-            table_concat(formatted_lines, data:split("\n"))
+            merge_lines(formatted_lines, data:split("\n"), not had_newline)
+            had_newline = (data:sub(-1) == "\n")
         else
             api.nvim_buf_set_lines(0, 0, -1, true, formatted_lines)
         end
