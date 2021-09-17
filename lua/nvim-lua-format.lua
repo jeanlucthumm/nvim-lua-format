@@ -45,7 +45,6 @@ local function merge_lines(accum, new, fuse_border)
         accum[#accum] = nil
     end
     table_concat(accum, new)
-    print(vim.inspect(new))
 end
 
 local M = {}
@@ -60,9 +59,14 @@ local default_opt = {
 
 function M.setup(opt)
     M.opt = vim.tbl_deep_extend("force", default_opt, opt or {})
+    M.configured = true
 end
 
 function M.format(opt, config_file)
+    if not M.configured then
+        api.nvim_err_writeln("Please call require\"nvim-lua-format\".setup()")
+        return nil
+    end
     -- Find defaults for parameters
     if not opt then opt = M.default end
     if not config_file and M.opt.use_local_config then
