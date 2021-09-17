@@ -14,6 +14,8 @@ jeanlucthumm/nvim-lua-format
 
 ## Quickstart
 
+Install LuaFormatter from [Koihik/LuaFormatter](https://github.com/Koihik/LuaFormatter)
+
 Call the `nvim-lua-format.setup()` function in your startup file (e.g.
 init.lua or init.vim):
 
