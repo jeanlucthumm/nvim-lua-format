@@ -2,6 +2,7 @@ local api = vim.api
 local uv = vim.loop
 local fn = vim.fn
 
+-- Split a string on every instance of |delimiter|, returning a list
 function string:split(delimiter)
     local result = {}
     local from = 1
@@ -16,10 +17,13 @@ function string:split(delimiter)
     return result
 end
 
+-- Append all entries in |src| to |dest|, maintaining indices
 local function table_concat(dest, src)
     for i = 1, #src do dest[#dest + 1] = src[i] end
 end
 
+-- Convert a table of formatting options to flags that LuaFormatter
+-- can understand
 local function convert_opt_to_args(opt)
     local args = {}
     for k, v in pairs(opt) do
@@ -37,6 +41,10 @@ local function convert_opt_to_args(opt)
     return args
 end
 
+-- Specialized |table_concat| that lets you combine the last line of |accum|
+-- and first line of |new| before concatenating. This helps with accumulating
+-- lines as stdout from LuaFormatter streams in, since a received data chunk
+-- could end in the middle of a line
 local function merge_lines(accum, new, fuse_border)
     if fuse_border and #accum > 0 and #new > 0 then
         new[1] = accum[#accum] .. new[1]
@@ -45,6 +53,9 @@ local function merge_lines(accum, new, fuse_border)
     table_concat(accum, new)
 end
 
+-- Usually the first line is enough context to figure out what's going on. 
+-- In the case of syntax errors, there are better sources of truth than
+-- stdout from LuaFormatter, like an LSP, so we don't bother showing more.
 local function parse_stderr(data)
     local first_line = data:split("\n")[1]
     api.nvim_err_writeln("Error calling lua-format: " ..
@@ -53,21 +64,20 @@ end
 
 local M = {}
 
+-- See doc/nvim-lua-format.txt
 local default_opt = {
-    -- Whether to search for local .lua-format files
     use_local_config = true,
-    -- TODO get rid of this option and pass in file directly through stdin
-    -- Whether to automatically save buffer when trying to format unsaved
     save_if_unsaved = false,
-    -- Default style options. These are overridden if using local config
     default = {}
 }
 
+-- See doc/nvim-lua-format.txt
 function M.setup(opt)
     M.opt = vim.tbl_deep_extend("force", default_opt, opt or {})
     M.configured = true
 end
 
+-- See doc/nvim-lua-format.txt
 function M.format(opt, config_file)
     if not M.configured then
         api.nvim_err_writeln("Please call require\"nvim-lua-format\".setup()")
