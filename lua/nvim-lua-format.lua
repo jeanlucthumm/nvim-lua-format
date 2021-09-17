@@ -53,7 +53,7 @@ local function merge_lines(accum, new, fuse_border)
     table_concat(accum, new)
 end
 
--- Usually the first line is enough context to figure out what's going on. 
+-- Usually the first line is enough context to figure out what's going on.
 -- In the case of syntax errors, there are better sources of truth than
 -- stdout from LuaFormatter, like an LSP, so we don't bother showing more.
 local function parse_stderr(data)
@@ -78,16 +78,16 @@ function M.setup(opt)
 end
 
 -- See doc/nvim-lua-format.txt
-function M.format(opt, config_file)
+function M.format(flags, file)
     if not M.configured then
         api.nvim_err_writeln("Please call require\"nvim-lua-format\".setup()")
         return nil
     end
 
     -- Find defaults for parameters
-    if not opt then opt = M.default end
-    if not config_file and M.opt.use_local_config then
-        config_file = fn.findfile(".lua-format", ".;")
+    if not flags then flags = M.default end
+    if not file and M.opt.use_local_config then
+        file = fn.findfile(".lua-format", ".;")
     end
 
     -- Handle unsaved buffers
@@ -107,10 +107,10 @@ function M.format(opt, config_file)
 
     -- Pass the correct style options
     local args = {name}
-    if config_file and config_file ~= "" then
-        table_concat(args, {"-c", config_file})
-    elseif opt then
-        table_concat(args, convert_opt_to_args(opt))
+    if file and file ~= "" then
+        table_concat(args, {"-c", file})
+    elseif flags then
+        table_concat(args, convert_opt_to_args(flags))
     end
 
     local code
