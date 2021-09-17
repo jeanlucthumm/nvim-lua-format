@@ -53,7 +53,7 @@ local default_opt = {
     -- TODO get rid of this option and pass in file directly through stdin
     -- Whether to automatically save buffer when trying to format unsaved
     save_if_unsaved = false,
-    -- Default style options
+    -- Default style options. These are overridden if using local config
     default = {}
 }
 
