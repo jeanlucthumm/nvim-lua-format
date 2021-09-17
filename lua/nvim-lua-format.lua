@@ -52,7 +52,7 @@ local M = {}
 
 local default_opt = {
     -- Whether to search for local .lua-format files
-    use_local_config = {},
+    use_local_config = true,
     -- Default style options
     default = {}
     -- TODO whether to automatically save buffer when formatting unsaved
