@@ -50,9 +50,11 @@ local M = {}
 local default_opt = {
     -- Whether to search for local .lua-format files
     use_local_config = true,
+    -- TODO get rid of this option and pass in file directly through stdin
+    -- Whether to automatically save buffer when trying to format unsaved
+    save_if_unsaved = false,
     -- Default style options
     default = {}
-    -- TODO whether to automatically save buffer when formatting unsaved
 }
 
 function M.setup(opt)
@@ -70,6 +72,17 @@ function M.format(opt, config_file)
     if not opt then opt = M.default end
     if not config_file and M.opt.use_local_config then
         config_file = fn.findfile(".lua-format", ".;")
+    end
+
+    -- Handle unsaved buffers
+    if vim.opt.modified:get() then
+        if M.opt.save_if_unsaved then
+            vim.cmd("write")
+        else
+            api.nvim_err_writeln(
+                "Cannot format unsaved buffer. Set |save_if_unsaved| in config to automatically save")
+            return nil
+        end
     end
 
     local name = api.nvim_buf_get_name(0) -- full path
