@@ -12,9 +12,7 @@ function string:split(delimiter)
         delim_from, delim_to = string.find(self, delimiter, from)
     end
     local last = string.sub(self, from)
-    if last ~= "" then
-        table.insert(result, string.sub(self, from))
-    end
+    if last ~= "" then table.insert(result, string.sub(self, from)) end
     return result
 end
 
@@ -67,6 +65,7 @@ function M.format(opt, config_file)
         api.nvim_err_writeln("Please call require\"nvim-lua-format\".setup()")
         return nil
     end
+
     -- Find defaults for parameters
     if not opt then opt = M.default end
     if not config_file and M.opt.use_local_config then
@@ -85,11 +84,13 @@ function M.format(opt, config_file)
         table_concat(args, convert_opt_to_args(opt))
     end
 
+    local code
     local handle
-    local function done()
+    local function done(c, _)
         stdout:close()
         stderr:close()
         handle:close()
+        code = c
     end
     handle = uv.spawn("lua-format",
                       {args = args, stdio = {nil, stdout, stderr}}, done)
@@ -101,7 +102,6 @@ function M.format(opt, config_file)
         end
     end))
 
-    -- FIXME this deletes the entire buffer on error
     -- Store stdout as it streams in and rewrite buf once its done
     local formatted_lines = {}
     local had_newline = false;
@@ -111,7 +111,9 @@ function M.format(opt, config_file)
             merge_lines(formatted_lines, data:split("\n"), not had_newline)
             had_newline = (data:sub(-1) == "\n")
         else
-            api.nvim_buf_set_lines(0, 0, -1, true, formatted_lines)
+            if code == 0 then
+                api.nvim_buf_set_lines(0, 0, -1, true, formatted_lines)
+            end
         end
     end))
 end
