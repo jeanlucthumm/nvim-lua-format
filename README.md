@@ -23,7 +23,7 @@ init.lua or init.vim):
     }
 ```
 
-Decide how you would like to call |nvim-lua-format.format()|:
+Decide how you would like to call `nvim-lua-format.format()`:
 
 ```lua
     -- Lua style keybding:
@@ -63,7 +63,7 @@ The default configuration options are as follows:
     }
 ```
 
-LuaFormatter style flags doc: [link](https://github.com/Koihik/LuaFormatter#default-configuration)
+LuaFormatter style flags documentation: [link](https://github.com/Koihik/LuaFormatter#default-configuration)
 
 ## API Reference
 
