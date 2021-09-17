@@ -45,6 +45,12 @@ local function merge_lines(accum, new, fuse_border)
     table_concat(accum, new)
 end
 
+local function parse_stderr(data)
+    local first_line = data:split("\n")[1]
+    api.nvim_err_writeln("Error calling lua-format: " ..
+                             (first_line or "unknown"))
+end
+
 local M = {}
 
 local default_opt = {
@@ -110,9 +116,7 @@ function M.format(opt, config_file)
 
     uv.read_start(stderr, vim.schedule_wrap(function(err, data)
         assert(not err, err)
-        if data then
-            api.nvim_err_writeln("Error calling lua-format: " .. data)
-        end
+        if data then parse_stderr(data) end
     end))
 
     -- Store stdout as it streams in and rewrite buf once its done
